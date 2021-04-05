@@ -17,6 +17,15 @@ enum DATA_INDEX {
     MAX_DATA_INDEX
 };
 
+struct user {
+    int id;
+    string login;
+    string password;
+    string email;
+    string phoneNumber;
+    bool adminRights;
+};
+
 /**
  * Функция вывода меню
  *
@@ -24,7 +33,7 @@ enum DATA_INDEX {
  */
 int menu(bool userAuth, bool authAdmin, string menuNotAuthData[], int lengthMenuNotAuthData, string menuAuthData[],
     int lengthMenuAuthData, string menuAdminhData[], int lengthMenuAdminData,
-    string authData[][MAX_DATA_INDEX], int userID) {
+    user authData[128], int userID) {
     while (true) {
         int maxLengthMenu = 0;
         int input;
@@ -35,7 +44,7 @@ int menu(bool userAuth, bool authAdmin, string menuNotAuthData[], int lengthMenu
             for (int i = 0; i < lengthMenuAdminData; i++) {
                 if (i == 0) {
                     cout << "# " << (i + 1) << ". " << menuAdminhData[i] << "# ";
-                    cout << authData[userID][LOGIN] << "!\t\t\t\t#\n";
+                    cout << authData[userID].login << "!\t\t\t\t#\n";
                     continue;
                 }
                 if (i == 1) {
@@ -45,12 +54,12 @@ int menu(bool userAuth, bool authAdmin, string menuNotAuthData[], int lengthMenu
                 }
                 if (i == 2) {
                     cout << "# " << (i + 1) << ". " << menuAdminhData[i] << "# ";
-                    cout << "e-mail: " << authData[userID][EMAIL] << "\t\t\t#\n";
+                    cout << "e-mail: " << authData[userID].email << "\t\t\t#\n";
                     continue;
                 }
                 if (i == 3) {
                     cout << "# " << (i + 1) << ". " << menuAdminhData[i] << "# ";
-                    cout << "тел.: " << authData[userID][PHONE_NUMBER] << "\t\t\t#\n";
+                    cout << "тел.: " << authData[userID].phoneNumber << "\t\t\t#\n";
                     continue;
                 }
                 cout << "# " << (i + 1) << ". " << menuAdminhData[i] << "#\t\t\t\t\t#\n";
@@ -61,7 +70,7 @@ int menu(bool userAuth, bool authAdmin, string menuNotAuthData[], int lengthMenu
             for (int i = 0; i < lengthMenuAuthData; i++) {
                 if (i == 0) {
                     cout << "# " << (i + 1) << ". " << menuAuthData[i] << "# ";
-                    cout << authData[userID][LOGIN] << "!\t\t\t\t#\n";
+                    cout << authData[userID].login << "!\t\t\t\t#\n";
                     continue;
                 }
                 if (i == 1) {
@@ -71,12 +80,12 @@ int menu(bool userAuth, bool authAdmin, string menuNotAuthData[], int lengthMenu
                 }
                 if (i == 2) {
                     cout << "# " << (i + 1) << ". " << menuAuthData[i] << "# ";
-                    cout << "e-mail: " << authData[userID][EMAIL] << "\t\t\t#\n";
+                    cout << "e-mail: " << authData[userID].email << "\t\t\t#\n";
                     continue;
                 }
                 if (i == 3) {
                     cout << "# " << (i + 1) << ". " << menuAuthData[i] << "# ";
-                    cout << "тел.: " << authData[userID][PHONE_NUMBER] << "\t\t\t#\n";
+                    cout << "тел.: " << authData[userID].phoneNumber << "\t\t\t#\n";
                     continue;
                 }
                 cout << "# " << (i + 1) << ". " << menuAuthData[i] << "#\t\t\t\t\t#\n";
@@ -144,18 +153,45 @@ bool checkField(string word) {
 /**
  * Проверяет есть ли уже такие строковые данные в базе
  *
+ * Эту функцию нужно переписать и избавиться от enum в программе, так как перешли на хранение данных пользователей в формате struct
+ * 
  * @param authData Данные о ригистрации пользователя
  * @param loginUser Вводимый логин пользователя
  * @param countUser Количество пользователей
  * @return есть такой логин в базе или нет
  */
-bool dataExist(string authData[128][MAX_DATA_INDEX], int index, const string& dataUser, int countUser) {
+bool dataExist(user authData[128], int index, const string& dataUser, int countUser) {
     bool temp = false;
     for (int i = 0; i <= countUser; i++) {
-        if (authData[i][index] == dataUser) {
-            temp = true;
-            break;
-        }
+        switch (index) {
+            case 0:
+                if (authData[i].login == dataUser) {
+                    temp = true;
+                }
+                break;
+            case 1:
+                if (authData[i].password == dataUser) {
+                    temp = true;
+                }
+                break;
+            case 2:
+                if (authData[i].login == dataUser) {
+                    temp = true;
+                }
+                break;
+            case 3:
+                if (authData[i].email == dataUser) {
+                    temp = true;
+                }
+                break;
+            case 4:
+                if (authData[i].phoneNumber == dataUser) {
+                    temp = true;
+                }
+                break;
+            default:
+                break;
+            }  
     }
     return temp;
 }
@@ -220,13 +256,13 @@ bool phoneNumberValidator(string phoneNumber) {
  * @param userID ID пользователя
  * @param countUser Количество пользователей
  */
-void registerUser(string authData[128][MAX_DATA_INDEX], bool& userAuth, int& userID, int& countUser, int*& ptrCountDeleteUser) {
+void registerUser(user authData[128], bool& userAuth, int& userID, int& countUser, int*& ptrCountDeleteUser) {
     string loginUser;
     string passUser;
     string email;
     string phoneNumber;
     int boolAdminInt;
-    string boolAdminStr;
+    bool boolAdminStr;
     bool valid;
 
     cout << "# - - Регистрация - -" << '\n';
@@ -300,10 +336,10 @@ void registerUser(string authData[128][MAX_DATA_INDEX], bool& userAuth, int& use
         cout << "# Хотите стать администратором? 0 - нет, >1 - да" << "\n# ";
         cin >> boolAdminInt;
         if (boolAdminInt) {
-            boolAdminStr = "true";
+            boolAdminStr = true;
         }
         else {
-            boolAdminStr = "false";
+            boolAdminStr = false;
         }
         break;
     }
@@ -330,11 +366,17 @@ void registerUser(string authData[128][MAX_DATA_INDEX], bool& userAuth, int& use
             // ptrTemp = nullptr;         // выходит из области видимости и уничтожается, не обязательно обнулять
         }
     }
-    authData[userID][LOGIN] = loginUser;
-    authData[userID][PASSWORD] = passUser;
-    authData[userID][EMAIL] = email;
-    authData[userID][PHONE_NUMBER] = phoneNumber;
-    authData[userID][BOOL_ADMIN] = boolAdminStr;
+
+    user newUser = { userID , loginUser , passUser , email , phoneNumber , boolAdminStr };
+    authData[userID] = newUser;
+
+    /*
+    authData[userID].login = loginUser;
+    authData[userID].password = passUser;
+    authData[userID].email = email;
+    authData[userID].phoneNumber = phoneNumber;
+    authData[userID].adminRights = boolAdminStr;
+    */
 }
 
 /**
@@ -347,7 +389,7 @@ void registerUser(string authData[128][MAX_DATA_INDEX], bool& userAuth, int& use
  * @param countUser
  * @param counterMax
  */
-void authorization(string authData[128][MAX_DATA_INDEX], bool& userAuth, bool& authAdmin, int& userID, int& countUser, int counterMax) {
+void authorization(user authData[128], bool& userAuth, bool& authAdmin, int& userID, int& countUser, int counterMax) {
     string loginUser;
     string passUser;
     bool flag = false;
@@ -365,7 +407,7 @@ void authorization(string authData[128][MAX_DATA_INDEX], bool& userAuth, bool& a
                 continue;
             }
             for (int i = 0; i <= countUser; i++) {
-                if (authData[i][LOGIN] == loginUser) {
+                if (authData[i].login == loginUser) {
                     flag = true;
                     userID = i;
                     break;
@@ -407,7 +449,7 @@ void authorization(string authData[128][MAX_DATA_INDEX], bool& userAuth, bool& a
             }
         }
 
-        if (authData[userID][BOOL_ADMIN] == "true") {
+        if (authData[userID].adminRights == true) {
             authAdmin = true;
         }
         else {
@@ -433,7 +475,7 @@ void logoutUser(bool& user) {
  * @param userID
  * @param counterMax
  */
-void editMyPass(string authData[][MAX_DATA_INDEX], int userID, int counterMax) {
+void editMyPass(user authData[128], int userID, int counterMax) {
     string passUser;
     int counter = 0;
     bool flag = false;
@@ -471,7 +513,7 @@ void editMyPass(string authData[][MAX_DATA_INDEX], int userID, int counterMax) {
             if (!valid) { return; }
             continue;
         }
-        authData[userID][1] = passUser;
+        authData[userID].password = passUser;
         break;
     }
 }
@@ -483,7 +525,7 @@ void editMyPass(string authData[][MAX_DATA_INDEX], int userID, int counterMax) {
  * @param countUser
  * @param counterMax
  */
-void editPass(string authData[][MAX_DATA_INDEX], int countUser, int counterMax) {
+void editPass(user authData[128], int countUser, int counterMax) {
     string passUser;
     int counter = 0;
     bool flag = false;
@@ -499,7 +541,7 @@ void editPass(string authData[][MAX_DATA_INDEX], int countUser, int counterMax) 
             continue;
         }
         for (int i = 0; i <= countUser; i++) {
-            if (authData[i][LOGIN] == loginUser) {
+            if (authData[i].login == loginUser) {
                 flag = true;
                 editMyPass(authData, i, counterMax);
                 break;
@@ -525,7 +567,7 @@ void editPass(string authData[][MAX_DATA_INDEX], int countUser, int counterMax) 
  * @param authData
  * @param countUser
  */
-void forgotLogin(string authData[][MAX_DATA_INDEX], int countUser) {
+void forgotLogin(user authData[128], int countUser) {
     int input;
     bool valid;
     while (true) {
@@ -533,7 +575,7 @@ void forgotLogin(string authData[][MAX_DATA_INDEX], int countUser) {
         cin >> input;
         for (int i = 0; i <= countUser; i++) {
             if (i == input) {
-                cout << "# Ваш логин: " << authData[input][LOGIN] << '\n';
+                cout << "# Ваш логин: " << authData[input].login << '\n';
                 return;
             }
         }
@@ -546,12 +588,15 @@ void forgotLogin(string authData[][MAX_DATA_INDEX], int countUser) {
 /**
 * Удаление пользователя
 */
-bool deleteUser(string authData[][MAX_DATA_INDEX], const string& login, int countUser, int*& ptrCountDeleteUser) {
+bool deleteUser(user authData[128], const string& login, int countUser, int*& ptrCountDeleteUser) {
     for (int i = 0; i <= countUser; i++) {
-        if (authData[i][LOGIN] == login) {
-            for (int j = 0; j < MAX_DATA_INDEX; j++) {
-                authData[i][j] = "0";
-            }
+        if (authData[i].login == login) {
+            authData[i].login = "0";
+            authData[i].password = "0";
+            authData[i].email = "0";
+            authData[i].phoneNumber = "0";
+            authData[i].adminRights = false;
+
             if (ptrCountDeleteUser == nullptr) {
                 ptrCountDeleteUser = new int[2];
                 ptrCountDeleteUser[0] = 1;
@@ -580,7 +625,7 @@ bool deleteUser(string authData[][MAX_DATA_INDEX], const string& login, int coun
 /**
 * Печать базы данных (показывает данные всех пользователей)
 */
-void printAuthData(string authData[][MAX_DATA_INDEX], int countUser, int* ptrCountDeleteUser) {
+void printAuthData(user authData[128], int countUser, int* ptrCountDeleteUser) {
     cout << "# -- База данных --" << '\n';
     cout << "# Всего зарегиcтрированно пользователей: " << (ptrCountDeleteUser == nullptr ? countUser : (countUser - ptrCountDeleteUser[0])) << "\n\n";
     cout << "# userID" << "" <<
@@ -591,16 +636,16 @@ void printAuthData(string authData[][MAX_DATA_INDEX], int countUser, int* ptrCou
         "# access level" << "\n";
     for (int i = 0; i <= countUser; i++) {
         cout << i << "\t" <<
-            authData[i][LOGIN] << "\t" <<
-            authData[i][EMAIL] << "\t" <<
-            authData[i][PASSWORD] << "\t" <<
-            authData[i][PHONE_NUMBER] << "\t" <<
-            (authData[i][BOOL_ADMIN] == "true" ? "администратор" : "пользователь");
+            authData[i].login << "\t" <<
+            authData[i].email << "\t" <<
+            authData[i].password << "\t" <<
+            authData[i].phoneNumber << "\t" <<
+            (authData[i].adminRights == true ? "администратор" : "пользователь");
         cout << endl;
     }
 }
 
-void editMyLogin(string authData[][MAX_DATA_INDEX], int userID, int countUser) {
+void editMyLogin(user authData[128], int userID, int countUser) {
     string passUser;
     string loginUser;
     bool valid;
@@ -621,10 +666,10 @@ void editMyLogin(string authData[][MAX_DATA_INDEX], int userID, int countUser) {
         }
         break;
     }
-    authData[userID][LOGIN] = loginUser;
+    authData[userID].login = loginUser;
 }
 
-void editMyEmail(string authData[][MAX_DATA_INDEX], int userID, int countUser) {
+void editMyEmail(user authData[128], int userID, int countUser) {
     string passUser;
     string email;
     bool valid;
@@ -645,10 +690,10 @@ void editMyEmail(string authData[][MAX_DATA_INDEX], int userID, int countUser) {
         }
         break;
     }
-    authData[userID][EMAIL] = email;
+    authData[userID].email = email;
 }
 
-void editMyPhoneNumber(string authData[][MAX_DATA_INDEX], int userID, int countUser) {
+void editMyPhoneNumber(user authData[128], int userID, int countUser) {
     string passUser;
     string phoneNumber;
     bool valid;
@@ -669,22 +714,38 @@ void editMyPhoneNumber(string authData[][MAX_DATA_INDEX], int userID, int countU
         }
         break;
     }
-    authData[userID][PHONE_NUMBER] = phoneNumber;
+    authData[userID].phoneNumber = phoneNumber;
 }
 
 int main() {
     setlocale(LC_ALL, "Russian");
     srand(static_cast<unsigned int>(time(nullptr)));
 
+    // проверки на аторизованность пользователя и хранение его ID
+    bool userAuth = false;
+    bool authAdmin = false;
+    int userID = 0;
+
+    // количество зарегистрированных пользователей не считает администратора и начинается с 1
+    // нужно всегда учитывать при любом переборе authData
+    int countUser = 5;
+
     // база данных
-    string authData[128][MAX_DATA_INDEX] = {
-            {"adminadmin", "adminadmin", "admin@admin.com", "9998887766", "true"},
-            {"useruser1", "useruser1", "user1@user.com", "1279478218", "false"},
-            {"useruser2", "useruser2", "user2@user.com", "2279478218", "false"},
-            {"useruser3", "useruser3", "user3@user.com", "3279478218", "false"},
-            {"useruser4", "useruser4", "user4@user.com", "4279478218", "false"},
-            {"useruser5", "useruser5", "user5@user.com", "5279478218", "false"},
-    };
+    user authData[128]; 
+
+    // Следующие данные нужны только для теста, удалить перед релизной сборкой
+    user newUser0 = { 0, "adminadmin", "adminadmin", "admin@admin.com", "9998887766", true };
+    authData[0] = newUser0;    
+    user newUser1 = { 1, "useruser1", "useruser1", "user1@user.com", "1279478218", false };
+    authData[1] = newUser1;
+    user newUser2 = { 2,"useruser2", "useruser2", "user2@user.com", "2279478218", false };
+    authData[2] = newUser2;
+    user newUser3 = { 3,"useruser3", "useruser3", "user3@user.com", "3279478218", false };
+    authData[3] = newUser3;
+    user newUser4 = { 4,"useruser4", "useruser4", "user4@user.com", "4279478218", false };
+    authData[4] = newUser4;
+    user newUser5 = { 5,"useruser5", "useruser5", "user5@user.com", "5279478218", false };
+    authData[5] = newUser5;
 
     // меню неавторизованного пользователя
     string menuNotAuthData[] = { "Регистрация пользователя\t\t", "Авторизация пользователя\t\t", "Восстановить логин\t\t\t", "Редактировать пароль\t\t", "Завершить программу\t\t" };
@@ -698,14 +759,6 @@ int main() {
     string menuAdminData[] = { "Удалить пользователя\t\t", "Показать базу данных\t\t", "Логаут\t\t\t\t", "Завершить программу\t\t" };
     int lengthMenuAdminData = sizeof(menuAdminData) / sizeof(menuAdminData[0]);
 
-    // проверки на аторизованность пользователя и хранение его ID
-    bool userAuth = false;
-    bool authAdmin = false;
-    int userID = 0;
-
-    // количество зарегистрированных пользователей не считает администратора и начинается с 1
-    // нужно всегда учитывать при любом переборе authData
-    int countUser = 5;
 
     // количество попыток вода данных
     int counterMax = 3;
@@ -761,7 +814,7 @@ int main() {
                 editMyPhoneNumber(authData, userID, countUser);
                 break;
             case 5:
-                deleteUser(authData, authData[userID][LOGIN], countUser, ptrCountDeleteUser);
+                deleteUser(authData, authData[userID].login, countUser, ptrCountDeleteUser);
                 break;
             case 6:
                 logoutUser(userAuth);
