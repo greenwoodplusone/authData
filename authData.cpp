@@ -10,11 +10,8 @@ using namespace std;
 */
 enum DATA_INDEX {
     LOGIN,
-    PASSWORD,
     EMAIL,
     PHONE_NUMBER,
-    BOOL_ADMIN,
-    MAX_DATA_INDEX
 };
 
 struct user {
@@ -25,6 +22,163 @@ struct user {
     string phoneNumber;
     bool adminRights;
 };
+
+int menu(bool userAuth, bool authAdmin, string menuNotAuthData[], int lengthMenuNotAuthData, 
+    string menuAuthData[], int lengthMenuAuthData, string menuAdminhData[], 
+    int lengthMenuAdminData, user authData[128], int userID);
+void trim(string& word);
+bool checkField(string word);
+bool dataExist(user authData[128], int index, const string& dataUser, int countUser);
+bool passwordExist(user authData[128], const string& dataUser, int userID);
+bool breakOrContinueForError();
+bool emailValidator(string email);
+bool phoneNumberValidator(string phoneNumber);
+void registerUser(user authData[128], bool& userAuth, int& userID, int& countUser, int*& ptrCountDeleteUser);
+void authorization(user authData[128], bool& userAuth, bool& authAdmin, int& userID, int& countUser, int counterMax);
+void logoutUser(bool& user);
+void editMyPass(user authData[128], int userID, int counterMax);
+void editPass(user authData[128], int countUser, int counterMax);
+void forgotLogin(user authData[128], int countUser);
+bool deleteUser(user authData[128], const string& login, int countUser, int*& ptrCountDeleteUser);
+void printAuthData(user authData[128], int countUser, int* ptrCountDeleteUser);
+void editMyLogin(user authData[128], int userID, int countUser);
+void editMyEmail(user authData[128], int userID, int countUser);
+void editMyPhoneNumber(user authData[128], int userID, int countUser);
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    srand(static_cast<unsigned int>(time(nullptr)));
+
+    // проверки на аторизованность пользователя и хранение его ID
+    bool userAuth = false;
+    bool authAdmin = false;
+    int userID = 0;
+
+    // количество зарегистрированных пользователей не считает администратора и начинается с 1
+    // нужно всегда учитывать при любом переборе authData
+    int countUser = 5;
+
+    // база данных
+    user authData[128]; 
+
+    // Следующие данные нужны только для теста, удалить перед релизной сборкой
+    user newUser0 = { 0, "adminadmin", "adminadmin", "admin@admin.com", "9998887766", true };
+    authData[0] = newUser0;    
+    user newUser1 = { 1, "useruser1", "useruser1", "user1@user.com", "1279478218", false };
+    authData[1] = newUser1;
+    user newUser2 = { 2,"useruser2", "useruser2", "user2@user.com", "2279478218", false };
+    authData[2] = newUser2;
+    user newUser3 = { 3,"useruser3", "useruser3", "user3@user.com", "3279478218", false };
+    authData[3] = newUser3;
+    user newUser4 = { 4,"useruser4", "useruser4", "user4@user.com", "4279478218", false };
+    authData[4] = newUser4;
+    user newUser5 = { 5,"useruser5", "useruser5", "user5@user.com", "5279478218", false };
+    authData[5] = newUser5;
+
+    // меню неавторизованного пользователя
+    string menuNotAuthData[] = { "Регистрация пользователя\t\t", "Авторизация пользователя\t\t", "Восстановить логин\t\t\t", "Редактировать пароль\t\t", "Завершить программу\t\t" };
+    int lengthMenuNotAuthData = sizeof(menuNotAuthData) / sizeof(menuNotAuthData[0]);
+
+    // меню аторизованного пользователя
+    string menuAuthData[] = { "Смена пароля\t\t\t", "Смена логина\t\t\t", "Смена e-mail\t\t\t", "Смена телефона\t\t\t", "Удалить пользователя\t\t", "Логаут\t\t\t\t", "Завершить программу\t\t" };
+    int lengthMenuAuthData = sizeof(menuAuthData) / sizeof(menuAuthData[0]);
+
+    // меню администратора
+    string menuAdminData[] = { "Удалить пользователя\t\t", "Показать базу данных\t\t", "Логаут\t\t\t\t", "Завершить программу\t\t" };
+    int lengthMenuAdminData = sizeof(menuAdminData) / sizeof(menuAdminData[0]);
+
+
+    // количество попыток вода данных
+    int counterMax = 3;
+
+    // указатель на счетчик пустых ячеек после удаления пользователя
+    int* ptrCountDeleteUser = nullptr;
+
+    bool valid;
+
+    // выбор разделов меню
+    do {
+        int input = menu(userAuth, authAdmin, menuNotAuthData, lengthMenuNotAuthData, menuAuthData, lengthMenuAuthData, menuAdminData, lengthMenuAdminData, authData, userID);
+        if (authAdmin) {
+            string login;
+            switch (input) {
+            case 1:
+                while (true) {
+                    cout << "# Введите логин пользователя которого вы хотите удалить\n# ";
+                    cin >> login;
+                    if (!deleteUser(authData, login, countUser, ptrCountDeleteUser)) {
+                        valid = breakOrContinueForError();
+                        if (!valid) { return 0; }
+                        continue;
+                    }
+                    break;
+                }
+            case 2:
+                printAuthData(authData, countUser, ptrCountDeleteUser);
+                break;
+            case 3:
+                logoutUser(authAdmin);
+                break;
+            case 4:
+                cout << "\nВсего хорошего!\n";
+                return 0;
+            default:
+                cout << "\nОтсутствующий пункт меню!\n";
+            }
+            cout << endl;
+        }
+        else if (userAuth) {
+            switch (input) {
+            case 1:
+                editMyPass(authData, userID, counterMax);
+                break;
+            case 2:
+                editMyLogin(authData, userID, countUser);
+                break;
+            case 3:
+                editMyEmail(authData, userID, countUser);
+                break;
+            case 4:
+                editMyPhoneNumber(authData, userID, countUser);
+                break;
+            case 5:
+                deleteUser(authData, authData[userID].login, countUser, ptrCountDeleteUser);
+                break;
+            case 6:
+                logoutUser(userAuth);
+                break;
+            case 7:
+                cout << "\nВсего хорошего!\n";
+                return 0;
+            default:
+                cout << "\nОтсутствующий пункт меню!\n";
+            }
+            cout << endl;
+        }
+        else {
+            switch (input) {
+            case 1:
+                registerUser(authData, userAuth, userID, countUser, ptrCountDeleteUser);
+                break;
+            case 2:
+                authorization(authData, userAuth, authAdmin, userID, countUser, counterMax);
+                break;
+            case 3:
+                forgotLogin(authData, countUser);
+                break;
+            case 4:
+                editPass(authData, countUser, counterMax);
+                break;
+            case 5:
+                cout << "# Всего хорошего!\n";
+                return 0;
+            default:
+                cout << "# Отсутствующий пункт меню!\n";
+            }
+            cout << endl;
+        }
+    } while (true);
+}
 
 /**
  * Функция вывода меню
@@ -154,7 +308,7 @@ bool checkField(string word) {
  * Проверяет есть ли уже такие строковые данные в базе
  *
  * Эту функцию нужно переписать и избавиться от enum в программе, так как перешли на хранение данных пользователей в формате struct
- * 
+ *
  * @param authData Данные о ригистрации пользователя
  * @param loginUser Вводимый логин пользователя
  * @param countUser Количество пользователей
@@ -164,34 +318,40 @@ bool dataExist(user authData[128], int index, const string& dataUser, int countU
     bool temp = false;
     for (int i = 0; i <= countUser; i++) {
         switch (index) {
-            case 0:
-                if (authData[i].login == dataUser) {
-                    temp = true;
-                }
-                break;
-            case 1:
-                if (authData[i].password == dataUser) {
-                    temp = true;
-                }
-                break;
-            case 2:
-                if (authData[i].login == dataUser) {
-                    temp = true;
-                }
-                break;
-            case 3:
-                if (authData[i].email == dataUser) {
-                    temp = true;
-                }
-                break;
-            case 4:
-                if (authData[i].phoneNumber == dataUser) {
-                    temp = true;
-                }
-                break;
-            default:
-                break;
-            }  
+        case 0:
+            if (authData[i].login == dataUser) {
+                temp = true;
+            }
+            break;
+        case 1:
+            if (authData[i].email == dataUser) {
+                temp = true;
+            }
+            break;
+        case 2:
+            if (authData[i].phoneNumber == dataUser) {
+                temp = true;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return temp;
+}
+
+/**
+ * Проверяет пароль на совпадение с БД
+ *
+ * @param authData Данные о ригистрации пользователя
+ * @param dataUser Пароль вводимый пользователем
+ * @param userID ID пользователя
+ * @return есть такой логин в базе или нет
+ */
+bool passwordExist(user authData[128], const string& dataUser, int userID) {
+    bool temp = false;
+    if (authData[userID].password == dataUser) {
+        temp = true;
     }
     return temp;
 }
@@ -204,7 +364,6 @@ bool breakOrContinueForError() {
     int input;
     cin >> input;
     return input != 0;
-
 }
 
 /**
@@ -369,14 +528,6 @@ void registerUser(user authData[128], bool& userAuth, int& userID, int& countUse
 
     user newUser = { userID , loginUser , passUser , email , phoneNumber , boolAdminStr };
     authData[userID] = newUser;
-
-    /*
-    authData[userID].login = loginUser;
-    authData[userID].password = passUser;
-    authData[userID].email = email;
-    authData[userID].phoneNumber = phoneNumber;
-    authData[userID].adminRights = boolAdminStr;
-    */
 }
 
 /**
@@ -436,7 +587,7 @@ void authorization(user authData[128], bool& userAuth, bool& authAdmin, int& use
                 if (!valid) { return; }
                 continue;
             }
-            flag = dataExist(authData, PASSWORD, passUser, userID);
+            flag = passwordExist(authData, passUser, userID);
             if (!flag) {
                 cout << "# Неверный пароль" << "\n# ";
                 counter++;
@@ -489,7 +640,7 @@ void editMyPass(user authData[128], int userID, int counterMax) {
             if (!valid) { return; }
             continue;
         }
-        flag = dataExist(authData, PASSWORD, passUser, userID);
+        flag = passwordExist(authData, passUser, userID);
         if (!flag) {
             cout << "# Неверный пароль" << "\n# ";
             counter++;
@@ -558,7 +709,6 @@ void editPass(user authData[128], int countUser, int counterMax) {
             return;
         }
     }
-
 }
 
 /**
@@ -645,6 +795,10 @@ void printAuthData(user authData[128], int countUser, int* ptrCountDeleteUser) {
     }
 }
 
+
+/**
+* Редактор логина из меню
+*/
 void editMyLogin(user authData[128], int userID, int countUser) {
     string passUser;
     string loginUser;
@@ -669,6 +823,9 @@ void editMyLogin(user authData[128], int userID, int countUser) {
     authData[userID].login = loginUser;
 }
 
+/**
+* Редактор почты из меню
+*/
 void editMyEmail(user authData[128], int userID, int countUser) {
     string passUser;
     string email;
@@ -693,6 +850,9 @@ void editMyEmail(user authData[128], int userID, int countUser) {
     authData[userID].email = email;
 }
 
+/**
+* Редактор телефона из меню
+*/
 void editMyPhoneNumber(user authData[128], int userID, int countUser) {
     string passUser;
     string phoneNumber;
@@ -715,139 +875,4 @@ void editMyPhoneNumber(user authData[128], int userID, int countUser) {
         break;
     }
     authData[userID].phoneNumber = phoneNumber;
-}
-
-int main() {
-    setlocale(LC_ALL, "Russian");
-    srand(static_cast<unsigned int>(time(nullptr)));
-
-    // проверки на аторизованность пользователя и хранение его ID
-    bool userAuth = false;
-    bool authAdmin = false;
-    int userID = 0;
-
-    // количество зарегистрированных пользователей не считает администратора и начинается с 1
-    // нужно всегда учитывать при любом переборе authData
-    int countUser = 5;
-
-    // база данных
-    user authData[128]; 
-
-    // Следующие данные нужны только для теста, удалить перед релизной сборкой
-    user newUser0 = { 0, "adminadmin", "adminadmin", "admin@admin.com", "9998887766", true };
-    authData[0] = newUser0;    
-    user newUser1 = { 1, "useruser1", "useruser1", "user1@user.com", "1279478218", false };
-    authData[1] = newUser1;
-    user newUser2 = { 2,"useruser2", "useruser2", "user2@user.com", "2279478218", false };
-    authData[2] = newUser2;
-    user newUser3 = { 3,"useruser3", "useruser3", "user3@user.com", "3279478218", false };
-    authData[3] = newUser3;
-    user newUser4 = { 4,"useruser4", "useruser4", "user4@user.com", "4279478218", false };
-    authData[4] = newUser4;
-    user newUser5 = { 5,"useruser5", "useruser5", "user5@user.com", "5279478218", false };
-    authData[5] = newUser5;
-
-    // меню неавторизованного пользователя
-    string menuNotAuthData[] = { "Регистрация пользователя\t\t", "Авторизация пользователя\t\t", "Восстановить логин\t\t\t", "Редактировать пароль\t\t", "Завершить программу\t\t" };
-    int lengthMenuNotAuthData = sizeof(menuNotAuthData) / sizeof(menuNotAuthData[0]);
-
-    // меню аторизованного пользователя
-    string menuAuthData[] = { "Смена пароля\t\t\t", "Смена логина\t\t\t", "Смена e-mail\t\t\t", "Смена телефона\t\t\t", "Удалить пользователя\t\t", "Логаут\t\t\t\t", "Завершить программу\t\t" };
-    int lengthMenuAuthData = sizeof(menuAuthData) / sizeof(menuAuthData[0]);
-
-    // меню администратора
-    string menuAdminData[] = { "Удалить пользователя\t\t", "Показать базу данных\t\t", "Логаут\t\t\t\t", "Завершить программу\t\t" };
-    int lengthMenuAdminData = sizeof(menuAdminData) / sizeof(menuAdminData[0]);
-
-
-    // количество попыток вода данных
-    int counterMax = 3;
-
-    // указатель на счетчик пустых ячеек после удаления пользователя
-    int* ptrCountDeleteUser = nullptr;
-
-    bool valid;
-
-    // выбор разделов меню
-    do {
-        int input = menu(userAuth, authAdmin, menuNotAuthData, lengthMenuNotAuthData, menuAuthData, lengthMenuAuthData, menuAdminData, lengthMenuAdminData, authData, userID);
-        if (authAdmin) {
-            string login;
-            switch (input) {
-            case 1:
-                while (true) {
-                    cout << "# Введите логин пользователя которого вы хотите удалить\n# ";
-                    cin >> login;
-                    if (!deleteUser(authData, login, countUser, ptrCountDeleteUser)) {
-                        valid = breakOrContinueForError();
-                        if (!valid) { return 0; }
-                        continue;
-                    }
-                    break;
-                }
-            case 2:
-                printAuthData(authData, countUser, ptrCountDeleteUser);
-                break;
-            case 3:
-                logoutUser(authAdmin);
-                break;
-            case 4:
-                cout << "\nВсего хорошего!\n";
-                return 0;
-            default:
-                cout << "\nОтсутствующий пункт меню!\n";
-            }
-            cout << endl;
-        }
-        else if (userAuth) {
-            switch (input) {
-            case 1:
-                editMyPass(authData, userID, counterMax);
-                break;
-            case 2:
-                editMyLogin(authData, userID, countUser);
-                break;
-            case 3:
-                editMyEmail(authData, userID, countUser);
-                break;
-            case 4:
-                editMyPhoneNumber(authData, userID, countUser);
-                break;
-            case 5:
-                deleteUser(authData, authData[userID].login, countUser, ptrCountDeleteUser);
-                break;
-            case 6:
-                logoutUser(userAuth);
-                break;
-            case 7:
-                cout << "\nВсего хорошего!\n";
-                return 0;
-            default:
-                cout << "\nОтсутствующий пункт меню!\n";
-            }
-            cout << endl;
-        }
-        else {
-            switch (input) {
-            case 1:
-                registerUser(authData, userAuth, userID, countUser, ptrCountDeleteUser);
-                break;
-            case 2:
-                authorization(authData, userAuth, authAdmin, userID, countUser, counterMax);
-                break;
-            case 3:
-                forgotLogin(authData, countUser);
-                break;
-            case 4:
-                editPass(authData, countUser, counterMax);
-                break;
-            case 5:
-                cout << "# Всего хорошего!\n";
-                return 0;
-            default:
-                cout << "# Отсутствующий пункт меню!\n";
-            }
-            cout << endl;
-        }
-    } while (true);
 }
